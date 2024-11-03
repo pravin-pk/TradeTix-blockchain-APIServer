@@ -1,0 +1,24 @@
+services:
+  ganache:
+    image: trufflesuite/ganache:latest
+    container_name: ganache-blockchain-private-network
+    ports:
+      - 8545:8545
+    networks:
+      - blockchain-private-network
+
+  remixide:
+    image: remixproject/remix-ide:latest
+    container_name: remixide-latest
+    ports: 
+      - 8080:80
+      - 65520:65520
+    networks:
+      - blockchain-private-network
+
+networks:
+  blockchain-private-network:
+    driver: bridge
+
+
+# The output of ganache-blockchain-private-network container will have the account details that you can use to deploy the smart contract.

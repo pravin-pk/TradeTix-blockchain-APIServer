@@ -67,9 +67,13 @@ def transfer(transactionModel: TrasactionModel):
         }
         signed_tx = w3.eth.account.sign_transaction(tx, private_key=os.getenv("PRIVATE_KEY"))
         tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        return {"transaction_hash": w3.to_hex(tx_hash)}
+        return {
+            "transaction_hash": w3.to_hex(tx_hash),
+            "total Transactions": w3.eth.get_transaction_count(transactionModel.from_address)
+            }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
 
 
 if __name__ == "__main__":
