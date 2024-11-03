@@ -16,7 +16,11 @@ w3 = Web3(Web3.HTTPProvider(os.getenv("GANACHE_RPC")))
 if not w3.is_connected():
     raise Exception("Failed to connect to the Ganache Private Blockchain network.")
 
+# Deployed Smart Contract init
+deployedContract = w3.eth.contract(address=os.getenv("CONTRACT_ADDRESS"), abi=(os.getenv("ABI")))
 
+
+# ------------------ENDPOINTS------------------------
 @app.get("/eth/accounts")
 def get_accounts():
     return {
@@ -24,9 +28,13 @@ def get_accounts():
         "Total Number of blocks": w3.eth.get_block_number()
         }
 
-@app.get("/eth/account/{account}")
-def get_account_key(account: str):
-    return w3.eth.get_code(account)
+@app.get("/eth/account/create")
+def create_new_account():
+    acc = w3.eth.account.create()
+    return {
+        "account": acc.address,
+        "private key": w3.to_hex(acc.key)    
+    }
 
 @app.get("/eth/balance/{address}")
 def get_balance(address: str):
@@ -46,7 +54,7 @@ def get_block_details(blockNumber: int):
             "error": str(e)
         })
 
-    
+# TRANSFERING FUNDS
 class TrasactionModel(BaseModel):
     from_address: str
     to_address: str
@@ -80,6 +88,13 @@ def transfer(transactionModel: TrasactionModel):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
+
+@app.get("/contract/balance")
+def get_contract_balance():
+    return {
+        "address": deployedContract.address,
+        "TradeTix Contract Balance": w3.from_wei(deployedContract.caller().contractBalance(), "ether")
+    }
 
 
 if __name__ == "__main__":
