@@ -58,10 +58,16 @@ def transfer(transactionModel: TrasactionModel):
         raise HTTPException(status_code=400, detail="Invalid Addresses. Please recheck")
     try:
         nonce = w3.eth.get_transaction_count(transactionModel.from_address)
+        estimatedGas = w3.eth.estimate_gas(
+                {'to': transactionModel.to_address, 
+                'from': transactionModel.from_address, 
+                'value': hex(int(transactionModel.amount))
+                }
+            )
         tx = {
             'to': transactionModel.to_address,
             'value': w3.to_wei(transactionModel.amount, 'ether'),
-            'gas': 2000000,
+            'gas': estimatedGas,
             'gasPrice': w3.to_wei('50', 'gwei'),
             'nonce': nonce,
         }
