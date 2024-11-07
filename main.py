@@ -55,27 +55,36 @@ def get_block_details(blockNumber: int):
         })
 
 # TRANSFERING FUNDS
-class TrasactionModel(BaseModel):
+class TransactionModel(BaseModel):
     from_address: str
     to_address: str
     amount: float
+    
+@app.post("/eth/estimateGas")
+def estimateGas(transactionModel: TransactionModel):
+    estimatedGas = w3.eth.estimate_gas(
+        {'to': transactionModel.to_address, 
+        'from': transactionModel.from_address, 
+        'value': hex(int(transactionModel.amount))
+        }
+    )
+    return {
+            "estimatedGas": estimatedGas,
+            "gasPrice": w3.from_wei(w3.to_wei('50', 'gwei'), "ether"),
+            "contractFee": 0.18 * transactionModel.amount,
+            "totalTransactionFee":  transactionModel.amount + (0.18 * transactionModel.amount) + float(w3.from_wei(w3.to_wei(estimatedGas * 50, 'gwei'), "ether"))
+            }
 
 @app.post("/eth/transfer/")
-def transfer(transactionModel: TrasactionModel):
+def transfer(transactionModel: TransactionModel):
     if (not w3.is_address(transactionModel.from_address) or not w3.is_address(transactionModel.to_address)):
         raise HTTPException(status_code=400, detail="Invalid Addresses. Please recheck")
     try:
         nonce = w3.eth.get_transaction_count(transactionModel.from_address)
-        estimatedGas = w3.eth.estimate_gas(
-                {'to': transactionModel.to_address, 
-                'from': transactionModel.from_address, 
-                'value': hex(int(transactionModel.amount))
-                }
-            )
         tx = {
             'to': transactionModel.to_address,
             'value': w3.to_wei(transactionModel.amount, 'ether'),
-            'gas': estimatedGas,
+            'gas': estimateGas(transactionModel),
             'gasPrice': w3.to_wei('50', 'gwei'),
             'nonce': nonce,
         }
