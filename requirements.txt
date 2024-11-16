@@ -1,0 +1,2 @@
+fastapi[standard]
+web3

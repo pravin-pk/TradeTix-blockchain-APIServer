@@ -17,7 +17,7 @@ if not w3.is_connected():
     raise Exception("Failed to connect to the Ganache Private Blockchain network.")
 
 # Deployed Smart Contract init
-deployedContract = w3.eth.contract(address=os.getenv("CONTRACT_ADDRESS"), abi=(os.getenv("ABI")))
+# deployedContract = w3.eth.contract(address=os.getenv("CONTRACT_ADDRESS"), abi=(os.getenv("ABI")))
 
 
 # ------------------ENDPOINTS------------------------
