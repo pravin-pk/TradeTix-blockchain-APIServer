@@ -51,6 +51,7 @@ jobs:
           context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          file: ./k8s/Dockerfile
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
