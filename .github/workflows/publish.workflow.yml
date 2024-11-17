@@ -36,6 +36,7 @@ jobs:
       - name: Log into registry ${{ env.REGISTRY }}
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
         with:
+          logout: false
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.REPO_GITHUB_TOKEN }}
