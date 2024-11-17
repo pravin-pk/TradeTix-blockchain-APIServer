@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: v0.1.0
+  IMAGE_NAME: ${{ github.repository }}
 
 permissions:
   packages: write
@@ -37,7 +37,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.5.1
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.1.0
 
       - name: Build and push Docker image
         id: build-and-push
@@ -48,3 +48,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           file: ./k8s/Dockerfile
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
