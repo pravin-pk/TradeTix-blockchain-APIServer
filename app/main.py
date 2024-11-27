@@ -20,8 +20,9 @@ w3 = Web3(Web3.HTTPProvider(os.getenv("GANACHE_RPC")))
 if not w3.is_connected():
     raise Exception("Failed to connect to the Ganache Private Blockchain network.")
 
+
 # Deployed Smart Contract init
-deployedContract = w3.eth.contract(address=os.getenv("CONTRACT_ADDRESS"), abi=(os.getenv("ABI")))
+deployedContract = w3.eth.contract(address=os.getenv("CONTRACT_ADDRESS"), abi=os.getenv("ABI"))
 
 
 # ------------------ENDPOINTS------------------------
@@ -138,23 +139,27 @@ def get_contract_balance():
 class ContractTransferModel(BaseModel):
     from_address: str
     recipient_address: str
-    amount: float
-    ticketId: str
+    totalTransactionFee: float
+    contractFee: float
+    gas: int
+    gasPrice: int
+    ticketData: str
     
 @app.post("/contract/transfer")
 def transferFunds(contractTransferModel: ContractTransferModel):
-    estimatedGasDetails = estimateGas(TransactionModel(contractTransferModel.from_address, contractTransferModel.recipient_address, contractTransferModel.amount))
     
-    tx_hash = deployedContract.functions.sendWithFee(
-        contractTransferModel.recipient_address, 1).transact({
-            "to": contractTransferModel.recipient_address,
+    tx = deployedContract.functions.sendWithFee(
+        contractTransferModel.recipient_address, w3.to_wei(contractTransferModel.contractFee, "ether")).transact(
+            {
             "from": contractTransferModel.from_address,
-            "value": w3.to_wei(str(estimatedGasDetails["totalTransactionFee"]), "ether"),
-            "gas": estimatedGasDetails["gas"],
-            "gasPrice": estimatedGasDetails["gasPrice"],
+            "value": w3.to_wei(contractTransferModel.totalTransactionFee, "ether"),
+            "gas": contractTransferModel.gas,
+            "gasPrice": contractTransferModel.gasPrice,
             "nonce": w3.eth.get_transaction_count(contractTransferModel.from_address),
-    })
-    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    }
+)
+
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx)
 
     return {
         "status": "Success!",
