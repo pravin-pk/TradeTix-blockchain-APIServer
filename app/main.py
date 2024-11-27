@@ -21,7 +21,7 @@ if not w3.is_connected():
     raise Exception("Failed to connect to the Ganache Private Blockchain network.")
 
 # Deployed Smart Contract init
-# deployedContract = w3.eth.contract(address=os.getenv("CONTRACT_ADDRESS"), abi=(os.getenv("ABI")))
+deployedContract = w3.eth.contract(address=os.getenv("CONTRACT_ADDRESS"), abi=(os.getenv("ABI")))
 
 
 # ------------------ENDPOINTS------------------------
@@ -70,7 +70,10 @@ class TransactionModel(BaseModel):
     from_address: str
     to_address: str
     amount: float
-
+    
+    def __init__(self, from_address, to_address, amount):
+        super().__init__(from_address = from_address, to_address = to_address, amount = amount)
+    
 
 @app.post("/eth/estimateGas")
 def estimateGas(transactionModel: TransactionModel):
@@ -82,8 +85,8 @@ def estimateGas(transactionModel: TransactionModel):
         }
     )
     return {
-        "estimatedGas": estimatedGas,
-        "gasPrice": w3.from_wei(w3.to_wei("50", "gwei"), "ether"),
+        "gas": estimatedGas * 10,
+        "gasPrice": w3.to_wei(50, "gwei"),
         "contractFee": 0.18 * transactionModel.amount,
         "totalTransactionFee": transactionModel.amount
         + (0.18 * transactionModel.amount)
@@ -99,11 +102,13 @@ def transfer(transactionModel: TransactionModel):
         raise HTTPException(status_code=400, detail="Invalid Addresses. Please recheck")
     try:
         nonce = w3.eth.get_transaction_count(transactionModel.from_address)
+        estimatedGasDetails = estimateGas(TransactionModel(transactionModel.from_address, transactionModel.to_address, transactionModel.amount))
+
         tx = {
             "to": transactionModel.to_address,
             "value": w3.to_wei(transactionModel.amount, "ether"),
-            "gas": estimateGas(transactionModel),
-            "gasPrice": w3.to_wei("50", "gwei"),
+            "gas": estimatedGasDetails["gas"],
+            "gasPrice": w3.to_wei(str(estimatedGasDetails["gasPrice"]), "wei"),
             "nonce": nonce,
         }
         signed_tx = w3.eth.account.sign_transaction(
@@ -125,8 +130,35 @@ def get_contract_balance():
     return {
         "address": deployedContract.address,
         "TradeTix Contract Balance": w3.from_wei(
-            deployedContract.caller().contractBalance(), "ether"
+            deployedContract.functions.getContractBalance().call(), "ether"
         ),
+    }
+    
+# TICKET PURCHASING
+class ContractTransferModel(BaseModel):
+    from_address: str
+    recipient_address: str
+    amount: float
+    ticketId: str
+    
+@app.post("/contract/transfer")
+def transferFunds(contractTransferModel: ContractTransferModel):
+    estimatedGasDetails = estimateGas(TransactionModel(contractTransferModel.from_address, contractTransferModel.recipient_address, contractTransferModel.amount))
+    
+    tx_hash = deployedContract.functions.sendWithFee(
+        contractTransferModel.recipient_address, 1).transact({
+            "to": contractTransferModel.recipient_address,
+            "from": contractTransferModel.from_address,
+            "value": w3.to_wei(str(estimatedGasDetails["totalTransactionFee"]), "ether"),
+            "gas": estimatedGasDetails["gas"],
+            "gasPrice": estimatedGasDetails["gasPrice"],
+            "nonce": w3.eth.get_transaction_count(contractTransferModel.from_address),
+    })
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+
+    return {
+        "status": "Success!",
+        "tx_receipt": json.loads(w3.to_json(tx_receipt))
     }
 
 
