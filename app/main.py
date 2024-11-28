@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import json
 import os
 from dotenv import load_dotenv
+import uuid
 
 # Load environment variables
 load_dotenv()
@@ -76,7 +77,7 @@ class TransactionModel(BaseModel):
         super().__init__(from_address = from_address, to_address = to_address, amount = amount)
     
 
-@app.post("/eth/estimateGas")
+@app.post("/eth/estimateTransferFee")
 def estimateGas(transactionModel: TransactionModel):
     estimatedGas = w3.eth.estimate_gas(
         {
@@ -89,7 +90,7 @@ def estimateGas(transactionModel: TransactionModel):
         "gas": estimatedGas * 10,
         "gasPrice": w3.to_wei(50, "gwei"),
         "contractFee": 0.18 * transactionModel.amount,
-        "totalTransactionFee": transactionModel.amount
+        "transferAmount": transactionModel.amount
         + (0.18 * transactionModel.amount)
         + float(w3.from_wei(w3.to_wei(estimatedGas * 50, "gwei"), "ether")),
     }
@@ -139,11 +140,10 @@ def get_contract_balance():
 class ContractTransferModel(BaseModel):
     from_address: str
     recipient_address: str
-    totalTransactionFee: float
+    transferAmount: float
     contractFee: float
     gas: int
     gasPrice: int
-    ticketData: str
     
 @app.post("/contract/transfer")
 def transferFunds(contractTransferModel: ContractTransferModel):
@@ -152,7 +152,7 @@ def transferFunds(contractTransferModel: ContractTransferModel):
         contractTransferModel.recipient_address, w3.to_wei(contractTransferModel.contractFee, "ether")).transact(
             {
             "from": contractTransferModel.from_address,
-            "value": w3.to_wei(contractTransferModel.totalTransactionFee, "ether"),
+            "value": w3.to_wei(contractTransferModel.transferAmount, "ether"),
             "gas": contractTransferModel.gas,
             "gasPrice": contractTransferModel.gasPrice,
             "nonce": w3.eth.get_transaction_count(contractTransferModel.from_address),
@@ -163,6 +163,7 @@ def transferFunds(contractTransferModel: ContractTransferModel):
 
     return {
         "status": "Success!",
+        "tx_id": "eth_" + uuid.uuid4().hex,
         "tx_receipt": json.loads(w3.to_json(tx_receipt))
     }
 
@@ -178,6 +179,7 @@ def withdrawFee(address: str):
     
     return {
         "status": "Withdraw Successfull",
+        "tx_id": "eth_" + uuid.uuid4().hex,
         "tx_receipt": json.loads(w3.to_json(tx_receipt))
     }
 
