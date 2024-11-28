@@ -166,6 +166,20 @@ def transferFunds(contractTransferModel: ContractTransferModel):
         "tx_receipt": json.loads(w3.to_json(tx_receipt))
     }
 
+@app.get("/contract/withdraw/{address}")
+def withdrawFee(address: str):
+    tx = deployedContract.functions.withdrawFees().transact({
+        "from": address,
+        "gasPrice": w3.to_wei(50, "gwei"),
+        "nounce":  w3.eth.get_transaction_count(address),
+    })
+    
+    tx_receipt = w3.eth.wait_for_transaction_receipt(tx)
+    
+    return {
+        "status": "Withdraw Successfull",
+        "tx_receipt": json.loads(w3.to_json(tx_receipt))
+    }
 
 if __name__ == "__main__":
     import uvicorn
