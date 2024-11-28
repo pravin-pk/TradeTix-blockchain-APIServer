@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}:0.1.0
+  IMAGE_NAME: tradetix-eth-server:0.1.0
 
 permissions:
   packages: write
