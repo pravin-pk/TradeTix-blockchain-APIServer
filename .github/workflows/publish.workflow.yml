@@ -44,7 +44,7 @@ jobs:
         uses: docker/build-push-action@v6.9.0
         with:
           context: .
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.1.0
+          tags: ${{ env.REGISTRY }}/tradetix-blockchain-apiserver:0.1.0
           labels: ${{ steps.meta.outputs.labels }}
           file: ./k8s/Dockerfile
           push: true
