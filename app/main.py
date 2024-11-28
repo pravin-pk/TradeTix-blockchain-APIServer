@@ -11,7 +11,7 @@ load_dotenv()
 app = FastAPI(
     title="Blockchain-API-Server",
     description="This app connects to the private blockchain network and communicates with the smart contract for our TradeTix App",
-    version="0.1.0",
+    version="0.1.1",
 )
 
 # Connect to Ganache RPC
